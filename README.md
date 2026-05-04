@@ -319,6 +319,6 @@ Aqui, ele funciona melhor como:<br>
 <b>um refinador, não um controlador principal.</b>
 </p>
 ```
-
+![Alt Text](https://github.com/rodfloripa/Projeto46/blob/main/with_rl(1).gif)
 ---
 
