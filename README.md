@@ -318,7 +318,7 @@ O segredo não é usar RL em tudo, mas saber onde ele realmente agrega valor.
 Aqui, ele funciona melhor como:<br>
 <b>um refinador, não um controlador principal.</b>
 </p>
-```
+
 
 ![Alt Text](https://github.com/rodfloripa/Projeto46/blob/main/with_rl(1).gif)
 
