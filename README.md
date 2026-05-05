@@ -1,12 +1,12 @@
 
 
 
-<p align="justify"><h1>Sistema de Resgate com Drones — Espiral + RL Suave</h1></p>
+<p align="justify"><h1>Sistema de Resgate com eVTOLs — Espiral + RL Suave</h1></p>
 
 <p align="justify"><h2>Visão Geral</h2></p>
 
 <p align="justify">
-Este projeto simula um sistema de múltiplos drones que realizam busca e resgate em um ambiente 2D com obstáculos (árvores).
+Este projeto simula um sistema de múltiplos eVTOLs que realizam busca e resgate em um ambiente 2D com obstáculos (árvores).
 </p>
 
 <p align="justify">
@@ -92,7 +92,7 @@ Responsável por criar:
 </p>
 
 <p align="justify">
-• posições dos drones <br>
+• posições dos eVTOLs <br>
 • árvores <br>
 • vítimas
 </p>
@@ -165,7 +165,7 @@ Funciona como um campo físico.
 
 ---
 
-<p align="justify"><h3>5. Movimento do Drone</h3></p>
+<p align="justify"><h3>5. Movimento do eVTOL</h3></p>
 
 <p align="justify">
 Combina:
@@ -236,7 +236,7 @@ Importante:
 <p align="justify"><h3>7. Máquina de Estados</h3></p>
 
 <p align="justify">
-Controla o comportamento do drone:
+Controla o comportamento do eVTOL:
 </p>
 
 ```python
@@ -303,7 +303,7 @@ Este projeto mostra um ponto importante em sistemas reais:
 • RL treinado offline <br>
 • Planejamento com A* <br>
 • Mapa de cobertura global <br>
-• Coordenação entre drones
+• Coordenação entre eVTOLs
 </p>
 
 ---
