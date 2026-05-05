@@ -320,6 +320,6 @@ Aqui, ele funciona melhor como:<br>
 </p>
 
 
-![Alt Text](https://github.com/rodfloripa/Projeto46/blob/main/with_rl(1).gif)
+![Alt Text](https://github.com/rodfloripa/Projeto46/blob/main/rl.gif)
 
 
