@@ -6,17 +6,13 @@
 <p align="justify"><h2>1. Visão Geral</h2></p>
 
 <p align="justify">
-Este projeto simula um sistema de múltiplos eVTOLs que realizam busca e resgate em um ambiente 2D com obstáculos (árvores).
-</p>
 
-<p align="justify">
-A abordagem combina:
-</p>
+Este projeto simula um sistema de múltiplos eVTOLs responsáveis por operações de busca e resgate em um ambiente bidimensional contendo obstáculos naturais, representados por árvores. O principal objetivo é investigar como técnicas híbridas de navegação podem produzir comportamento mais estável, eficiente e robusto do que abordagens puramente baseadas em aprendizado por reforço.
 
-<p align="justify">
-• Heurística forte (espiral) → garante cobertura do espaço <br>
-• Campo de repulsão → evita colisões <br>
-• Reinforcement Learning (RL) leve → faz ajustes finos na trajetória
+A arquitetura combina três componentes principais. O primeiro é uma heurística geométrica forte baseada em exploração em espiral, responsável por garantir cobertura sistemática do espaço. O segundo é um campo contínuo de repulsão, utilizado para evitar colisões com obstáculos. O terceiro componente é um módulo leve de Reinforcement Learning baseado em Q-Learning tabular, cuja função é realizar pequenos ajustes locais na trajetória dos agentes.
+
+Ao invés de utilizar RL como controlador global, o projeto explora a ideia de utilizar aprendizado por reforço apenas como refinador local da navegação. Essa abordagem reduz drasticamente a complexidade do problema e produz trajetórias significativamente mais suaves e estáveis.
+
 </p>
 
 ---
@@ -24,40 +20,27 @@ A abordagem combina:
 <p align="justify"><h2>2. Insight Principal</h2></p>
 
 <p align="justify">
-RL puro não funciona bem nesse problema.
-</p>
 
-<p align="justify">
-Motivos:
-</p>
+Aplicar Reinforcement Learning puro em problemas contínuos de navegação raramente produz bons resultados sem uma enorme quantidade de engenharia adicional. Em ambientes reais, os agentes precisam lidar simultaneamente com espaços contínuos, dinâmica não-linear, obstáculos variáveis e recompensas extremamente difíceis de definir corretamente.
 
-<p align="justify">
-• Espaço contínuo (movimento em 2D) <br>
-• Recompensa difícil de definir <br>
-• Exploração ineficiente <br>
-• Convergência lenta ou inexistente
-</p>
+Na prática, isso frequentemente produz trajetórias caóticas, comportamento instável e convergência extremamente lenta. O agente tende a explorar regiões irrelevantes do ambiente, repetir movimentos ineficientes e falhar na cobertura adequada do espaço. Além disso, pequenas mudanças no ambiente podem degradar significativamente o desempenho do modelo.
 
-<p align="justify">
-Resultado prático:
-</p>
+Por esse motivo, o sistema proposto adota uma estratégia híbrida. A inteligência global da exploração é controlada por uma heurística forte e determinística, enquanto o RL atua apenas como um mecanismo adaptativo local responsável por suavizar trajetórias e melhorar pequenas decisões de navegação.
 
-<p align="justify">
-• RL puro gera trajetórias caóticas <br>
-• Não cobre o espaço de forma eficiente <br>
-• Pode ficar preso ou nunca encontrar vítimas
 </p>
 
 ---
 
-<p align="justify"><h2>3. Solução adotada</h2></p>
+<p align="justify"><h2>3. Solução Adotada</h2></p>
 
 <p align="justify">
-O sistema funciona bem porque segue este princípio:
-</p>
 
-<p align="justify">
-<b>Use uma heurística forte para garantir comportamento global e RL apenas para ajustes locais suaves.</b>
+O princípio central deste projeto consiste em utilizar heurísticas clássicas para controlar o comportamento global do sistema e aplicar Reinforcement Learning apenas nos pontos onde ele realmente agrega valor. Em vez de aprender toda a missão do zero, os eVTOLs já possuem um comportamento exploratório eficiente definido geometricamente através de trajetórias em espiral.
+
+Essa exploração sistemática garante que o ambiente seja coberto de maneira organizada e previsível. Sobre essa estrutura determinística, o Q-Learning aprende pequenos desvios angulares que ajudam os agentes a evitar obstáculos, suavizar curvas e reduzir o tempo necessário para alcançar objetivos específicos.
+
+Essa separação clara entre comportamento global e ajuste local reduz drasticamente o espaço de busca do aprendizado por reforço, tornando o sistema mais estável, interpretável e computacionalmente eficiente.
+
 </p>
 
 ---
@@ -69,7 +52,9 @@ O sistema funciona bem porque segue este princípio:
 <p align="justify"><h3>4.1 Configuração</h3></p>
 
 <p align="justify">
-Define parâmetros do ambiente e do RL.
+
+A primeira etapa do sistema define os parâmetros físicos do ambiente e os hiperparâmetros associados ao módulo de aprendizado por reforço. Esses valores controlam características importantes da simulação, como tamanho do ambiente, quantidade de agentes, resolução do movimento, alcance dos sensores e política de exploração utilizada pelo RL.
+
 </p>
 
 ```python
@@ -85,18 +70,20 @@ ACTIONS = [-0.5, -0.2, 0, 0.2, 0.5]
 EPSILON = 0.1
 ````
 
+<p align="justify">
+
+Os parâmetros escolhidos permitem criar um ambiente suficientemente complexo para validar o comportamento híbrido entre heurísticas geométricas e aprendizado adaptativo.
+
+</p>
+
 ---
 
 <p align="justify"><h3>4.2 Inicialização do Ambiente</h3></p>
 
 <p align="justify">
-Responsável por criar:
-</p>
 
-<p align="justify">
-• posições dos eVTOLs <br>
-• árvores <br>
-• vítimas
+A função de inicialização é responsável por criar o estado inicial completo da simulação. Todos os eVTOLs começam posicionados na base central, enquanto árvores e vítimas são distribuídas ao longo do ambiente. Além das posições iniciais, cada agente recebe parâmetros associados ao movimento em espiral, como ângulo inicial, raio de exploração e direção radial.
+
 </p>
 
 ```python
@@ -110,12 +97,20 @@ def reset(self):
     self.victims = [...]
 ```
 
+<p align="justify">
+
+Esses parâmetros garantem que os agentes iniciem a exploração de maneira coordenada, evitando sobreposição excessiva entre trajetórias.
+
+</p>
+
 ---
 
 <p align="justify"><h3>4.3 Movimento em Espiral (Exploração)</h3></p>
 
 <p align="justify">
-A espiral garante cobertura sistemática do ambiente.
+
+O movimento em espiral representa o núcleo estratégico do sistema. Ele garante cobertura sistemática do ambiente sem depender exclusivamente de aprendizado. A trajetória é construída ajustando continuamente o raio e o ângulo de cada agente em relação à base central.
+
 </p>
 
 ```python
@@ -136,7 +131,9 @@ def update_spiral(self, i):
 ```
 
 <p align="justify">
-Esse é o coração do sistema. Sem isso, o RL não consegue explorar de forma eficiente.
+
+Sem essa heurística forte, o RL teria enorme dificuldade para explorar eficientemente o ambiente. A espiral atua como um prior geométrico extremamente poderoso, fornecendo comportamento global organizado e previsível.
+
 </p>
 
 ---
@@ -144,7 +141,9 @@ Esse é o coração do sistema. Sem isso, o RL não consegue explorar de forma e
 <p align="justify"><h3>4.4 Campo de Repulsão (Evitar Árvores)</h3></p>
 
 <p align="justify">
-Evita colisões de forma contínua.
+
+O sistema de repulsão utiliza uma analogia inspirada em campos físicos para evitar colisões. Quando um eVTOL se aproxima de uma árvore, uma força vetorial é aplicada na direção oposta ao obstáculo. Quanto menor a distância, maior a intensidade da repulsão.
+
 </p>
 
 ```python
@@ -162,7 +161,9 @@ def repulsion(self, pos):
 ```
 
 <p align="justify">
-Funciona como um campo físico.
+
+Essa abordagem produz desvios suaves e contínuos, evitando mudanças abruptas de direção e gerando comportamento significativamente mais natural durante a navegação.
+
 </p>
 
 ---
@@ -170,13 +171,9 @@ Funciona como um campo físico.
 <p align="justify"><h3>4.5 Movimento do eVTOL</h3></p>
 
 <p align="justify">
-Combina:
-</p>
 
-<p align="justify">
-• direção desejada (espiral ou alvo) <br>
-• desvio de obstáculos <br>
-• ajuste do RL
+O movimento final do agente é resultado da combinação entre direção desejada, repulsão de obstáculos e correção angular produzida pelo RL. Inicialmente o agente calcula o vetor principal até o alvo ou waypoint. Em seguida, o módulo de aprendizado aplica pequenos ajustes na direção calculada.
+
 </p>
 
 ```python
@@ -200,17 +197,21 @@ def move(self, i, target):
     self.pos[i] += direction * STEP
 ```
 
+<p align="justify">
+
+A combinação desses componentes produz trajetórias mais suaves, estáveis e eficientes do que abordagens puramente reativas ou totalmente baseadas em RL.
+
+</p>
+
 ---
 
 <p align="justify"><h3>4.6 RL (Ajuste Fino)</h3></p>
 
 <p align="justify">
 
-Neste projeto, o módulo de <b>Reinforcement Learning (RL)</b> atua apenas como um sistema de correção local da trajetória.
+Neste projeto, o Reinforcement Learning não é utilizado como controlador global da navegação. Seu papel é funcionar apenas como um refinador local de trajetória. O sistema principal continua sendo controlado pela heurística geométrica em espiral, enquanto o RL aprende pequenos desvios angulares capazes de melhorar a movimentação em regiões complexas do ambiente.
 
-O objetivo não é fazer o eVTOL aprender toda a missão do zero, mas sim aprender pequenos desvios angulares que melhoram a navegação em regiões com obstáculos.
-
-A lógica principal da navegação continua sendo controlada pela heurística em espiral. O RL funciona como uma camada adaptativa responsável por pequenos refinamentos na direção do movimento.
+Ao limitar o escopo do aprendizado apenas para ajustes locais, o problema se torna muito mais simples e estável. Em vez de aprender toda a política de exploração, o agente aprende apenas como corrigir levemente sua direção para reduzir colisões e melhorar eficiência.
 
 </p>
 
@@ -220,9 +221,7 @@ A lógica principal da navegação continua sendo controlada pela heurística em
 
 <p align="justify">
 
-Cada eVTOL possui sua própria tabela Q, responsável por armazenar os valores esperados de recompensa para pares <b>(estado, ação)</b>.
-
-A estrutura é implementada como um dicionário Python:
+Cada eVTOL possui sua própria tabela Q. Essa estrutura armazena o valor esperado de recompensa associado a pares de estado e ação. A implementação utiliza um dicionário Python simples, permitindo acesso rápido e atualização eficiente dos valores aprendidos.
 
 </p>
 
@@ -232,12 +231,7 @@ self.Q = {}
 
 <p align="justify">
 
-A chave do dicionário é composta por:
-
-• estado atual do eVTOL <br>
-• ação escolhida naquele estado
-
-O valor armazenado representa a qualidade esperada daquela ação naquele contexto específico.
+A chave do dicionário representa o estado atual do agente juntamente com a ação escolhida. O valor associado corresponde à qualidade esperada daquela decisão específica.
 
 </p>
 
@@ -247,7 +241,7 @@ O valor armazenado representa a qualidade esperada daquela ação naquele contex
 
 <p align="justify">
 
-O ambiente físico é contínuo, mas Q-Learning tabular funciona melhor em espaços discretos. Para resolver isso, a posição do eVTOL é convertida para um grid reduzido.
+Como o ambiente é contínuo, a posição do agente precisa ser discretizada para permitir o uso de Q-Learning tabular. Isso é realizado dividindo o espaço em células de tamanho fixo.
 
 </p>
 
@@ -258,11 +252,7 @@ def get_state(self, i):
 
 <p align="justify">
 
-A posição contínua é dividida por 5 e arredondada, transformando o espaço em células discretas.
-
-Sem essa discretização, o número de estados seria praticamente infinito, inviabilizando o uso de Q-Learning tabular.
-
-Essa estratégia reduz drasticamente a complexidade do problema e permite aprendizado eficiente mesmo com poucos episódios.
+Sem essa discretização, o número de estados possíveis seria praticamente infinito, tornando inviável o armazenamento da tabela Q. A discretização reduz drasticamente a complexidade do problema mantendo informação espacial suficiente para aprendizado local eficiente.
 
 </p>
 
@@ -272,7 +262,7 @@ Essa estratégia reduz drasticamente a complexidade do problema e permite aprend
 
 <p align="justify">
 
-As ações não representam movimentos absolutos. Em vez disso, representam pequenos ajustes angulares aplicados ao vetor de direção desejado.
+As ações do agente não representam movimentos absolutos. Elas representam pequenos ajustes angulares aplicados sobre a direção desejada calculada geometricamente.
 
 </p>
 
@@ -280,17 +270,11 @@ As ações não representam movimentos absolutos. Em vez disso, representam pequ
 ACTIONS = [-0.5, -0.2, 0, 0.2, 0.5]
 ```
 
-| Ação   | Significado          |
-| ------ | -------------------- |
-| `0`    | Segue reto           |
-| `0.2`  | Pequena curva        |
-| `0.5`  | Curva mais agressiva |
-| `-0.2` | Ajuste oposto        |
-| `-0.5` | Curva forte oposta   |
-
 <p align="justify">
 
-O RL não decide o destino do eVTOL. Ele apenas aprende como ajustar a direção localmente para evitar colisões e reduzir o caminho até o alvo.
+Valores positivos produzem rotações em uma direção, enquanto valores negativos produzem rotações opostas. A ação zero mantém o movimento original sem alteração.
+
+Esse conjunto reduzido de ações simplifica enormemente o processo de aprendizado, permitindo que o agente aprenda correções locais de trajetória de forma eficiente.
 
 </p>
 
@@ -300,7 +284,7 @@ O RL não decide o destino do eVTOL. Ele apenas aprende como ajustar a direção
 
 <p align="justify">
 
-A escolha das ações utiliza a estratégia <b>epsilon-greedy</b>, muito comum em aprendizado por reforço.
+A política de decisão utiliza a estratégia epsilon-greedy. Durante a navegação, o agente alterna entre exploração e explotação. Em alguns momentos escolhe ações aleatórias para descobrir novas possibilidades; em outros utiliza a melhor ação conhecida para o estado atual.
 
 </p>
 
@@ -318,17 +302,7 @@ def choose_action(self, state):
 
 <p align="justify">
 
-O comportamento do agente é dividido em duas partes:
-
-• exploração → testa ações aleatórias <br>
-• explotação → utiliza a melhor ação conhecida
-
-Com <b>EPSILON = 0.1</b>:
-
-• 10% das vezes o eVTOL explora <br>
-• 90% das vezes utiliza o conhecimento aprendido
-
-Esse equilíbrio é essencial para evitar que o agente fique preso em soluções ruins.
+Esse equilíbrio é essencial para evitar convergência prematura e permitir aprendizado contínuo ao longo da simulação.
 
 </p>
 
@@ -338,7 +312,7 @@ Esse equilíbrio é essencial para evitar que o agente fique preso em soluções
 
 <p align="justify">
 
-Após executar uma ação e observar o novo estado, o eVTOL atualiza sua tabela Q usando a equação clássica do Q-Learning.
+Após executar uma ação, o agente calcula uma recompensa baseada na distância até o alvo e atualiza sua tabela utilizando a equação clássica do Q-Learning.
 
 </p>
 
@@ -363,17 +337,11 @@ def update_q(self, s, a, r, s2):
 Q(s,a) = Q(s,a) + α * [r + γ * max(Q(s',a')) - Q(s,a)]
 ```
 
-| Parâmetro   | Função                       |
-| ----------- | ---------------------------- |
-| `α (ALPHA)` | Taxa de aprendizado          |
-| `γ (GAMMA)` | Peso das recompensas futuras |
-| `r`         | Recompensa imediata          |
-| `s'`        | Próximo estado               |
+<p align="justify">
 
-```python
-ALPHA = 0.1
-GAMMA = 0.9
-```
+A recompensa é definida utilizando a distância negativa até o alvo.
+
+</p>
 
 ```python
 r = -np.linalg.norm(self.pos[i] - target)
@@ -381,7 +349,7 @@ r = -np.linalg.norm(self.pos[i] - target)
 
 <p align="justify">
 
-Quanto mais próximo do alvo, maior a recompensa (menos negativa).
+Quanto menor a distância, maior a recompensa recebida pelo agente.
 
 </p>
 
@@ -391,9 +359,7 @@ Quanto mais próximo do alvo, maior a recompensa (menos negativa).
 
 <p align="justify">
 
-O RL é integrado diretamente ao sistema de movimento do eVTOL.
-
-Inicialmente o agente calcula a direção geométrica ideal até o alvo. Em seguida, o RL aplica um pequeno ajuste angular aprendido.
+O RL é integrado diretamente ao vetor de direção calculado geometricamente. O agente primeiro determina a direção ideal até o alvo e posteriormente aplica um pequeno ajuste angular aprendido.
 
 </p>
 
@@ -418,7 +384,7 @@ if self.use_rl:
 
 <p align="justify">
 
-Após o movimento:
+Após o movimento, o estado seguinte é observado e a tabela Q é atualizada continuamente.
 
 </p>
 
@@ -441,9 +407,7 @@ if self.use_rl:
 
 <p align="justify">
 
-O aprendizado acontece continuamente durante a simulação.
-
-O eVTOL executa ações, observa os resultados e ajusta gradualmente sua política de navegação.
+O aprendizado ocorre online durante toda a simulação.
 
 </p>
 
@@ -453,34 +417,9 @@ O eVTOL executa ações, observa os resultados e ajusta gradualmente sua políti
 
 <p align="justify">
 
-Sem o módulo de RL, os eVTOLs simplesmente seguiriam a direção do waypoint utilizando apenas heurísticas clássicas de navegação.
+Sem o módulo de RL, os eVTOLs apenas seguiriam o waypoint geométrico definido pela espiral. Com Q-Learning, os agentes aprendem pequenos desvios locais capazes de melhorar significativamente a navegação em regiões complexas.
 
-Com Q-Learning:
-
-• os eVTOLs aprendem desvios locais mais eficientes <br>
-• melhoram o contorno de obstáculos <br>
-• reduzem colisões <br>
-• encontram trajetórias mais suaves <br>
-• diminuem o tempo de chegada ao alvo
-
-O RL atua como uma camada adaptativa sobre a lógica principal do sistema.
-
-Isso torna o comportamento significativamente mais robusto em ambientes complexos, mantendo ao mesmo tempo uma arquitetura leve e computacionalmente simples.
-
-</p>
-
----
-
-<p align="justify">
-
-Importante:
-
-</p>
-
-<p align="justify">
-
-• RL não controla tudo <br>
-• apenas ajusta o ângulo
+O aprendizado reduz colisões, suaviza trajetórias e melhora eficiência de movimentação sem comprometer a estabilidade global fornecida pela heurística principal.
 
 </p>
 
@@ -489,7 +428,9 @@ Importante:
 <p align="justify"><h3>4.7 Máquina de Estados</h3></p>
 
 <p align="justify">
-Controla o comportamento do eVTOL:
+
+A máquina de estados controla o comportamento global de cada agente durante a missão. Dependendo da situação atual, o eVTOL alterna entre exploração, deslocamento até vítimas e retorno à base.
+
 </p>
 
 ```python
@@ -502,13 +443,9 @@ elif self.state[i] == "to_base":
 ```
 
 <p align="justify">
-Estados:
-</p>
 
-<p align="justify">
-• search → exploração em espiral <br>
-• to_victim → ir até a vítima <br>
-• to_base → retornar
+Essa organização modular simplifica a lógica do sistema e torna o comportamento dos agentes mais previsível e interpretável.
+
 </p>
 
 ---
@@ -516,24 +453,31 @@ Estados:
 <p align="justify"><h3>4.8 Renderização</h3></p>
 
 <p align="justify">
-Responsável pelo GIF final.
+
+A etapa final é responsável pela geração do GIF da simulação. Cada frame representa o estado atual do ambiente e das trajetórias dos eVTOLs.
+
 </p>
 
 ```python
 imageio.mimsave(filename, frames, fps=8)
 ```
 
+<p align="justify">
+
+Isso permite visualizar claramente o comportamento emergente produzido pela integração entre heurísticas geométricas e aprendizado por reforço.
+
+</p>
+
 ---
 
 <p align="justify"><h2>5. Conclusão</h2></p>
 
 <p align="justify">
-Este projeto mostra um ponto importante em sistemas reais:
-</p>
 
-<p align="justify">
-<b>RL puro raramente resolve problemas complexos de navegação.</b><br>
-<b>Combinar heurísticas + RL leve é muito mais eficaz.</b>
+Este projeto demonstra um princípio extremamente importante em sistemas inteligentes reais: Reinforcement Learning raramente funciona melhor quando utilizado isoladamente em problemas contínuos complexos.
+
+A combinação entre heurísticas fortes e aprendizado leve produz sistemas significativamente mais estáveis, eficientes e interpretáveis. Ao utilizar RL apenas como refinador local, o sistema reduz complexidade computacional e melhora robustez da navegação.
+
 </p>
 
 ---
@@ -551,10 +495,9 @@ Este projeto mostra um ponto importante em sistemas reais:
 <p align="justify"><h2>7. Possíveis Melhorias</h2></p>
 
 <p align="justify">
-• RL treinado offline <br>
-• Planejamento com A* <br>
-• Mapa de cobertura global <br>
-• Coordenação entre eVTOLs
+
+O sistema ainda pode ser expandido através de treinamento offline mais sofisticado, planejamento global utilizando algoritmos como A*, mapas globais de cobertura e coordenação cooperativa entre agentes. Essas melhorias permitiriam aumentar escalabilidade e eficiência em ambientes maiores e mais complexos.
+
 </p>
 
 ---
@@ -562,12 +505,11 @@ Este projeto mostra um ponto importante em sistemas reais:
 <p align="justify"><h2>8. Insight Final</h2></p>
 
 <p align="justify">
-O segredo não é usar RL em tudo, mas saber onde ele realmente agrega valor.
-</p>
 
-<p align="justify">
-Aqui, ele funciona melhor como:<br>
-<b>um refinador, não um controlador principal.</b>
+O principal insight deste projeto é que o verdadeiro poder do Reinforcement Learning aparece quando ele é aplicado estrategicamente nos pontos corretos do sistema.
+
+Aqui, o RL funciona melhor não como controlador global da navegação, mas como um refinador inteligente capaz de melhorar pequenas decisões locais sem comprometer a estabilidade estrutural fornecida pelas heurísticas geométricas.
+
 </p>
 
 ![Alt Text](https://github.com/rodfloripa/Projeto46/blob/main/rl.gif)
