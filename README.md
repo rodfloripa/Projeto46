@@ -574,6 +574,3 @@ Aqui, ele funciona melhor como:<br>
 
 ```
 ```
-
-
-
